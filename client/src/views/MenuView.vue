@@ -4,7 +4,7 @@ import ItemsBrowser from "../components/ItemsBrowser.vue";
 import axios from "axios";
 
 
-// Reactive data
+// define the Reactive data
 const categories = ref([])
 const selected_category = ref('fruit')
 const items = ref([])
@@ -23,7 +23,9 @@ onMounted(async() => {
 
         console.log(response.data)
 
-        categories.value = response.data
+        categories.value = response.data // retrieve the data
+
+        getItems() // invoke the table data at the start of opening the browser
 
     } catch(e) {
         // to display the error message where there is a connection error
@@ -34,6 +36,26 @@ onMounted(async() => {
 // TODO: Fetch items for the currently selected category
 async function getItems() {
     // Add code
+
+    let url = "http://127.0.0.1:3000/items"
+
+    try{
+        let response = await axios.get(url, {
+            params : {
+                category : selected_category.value
+            }
+        })
+
+        items.value = response.data
+        console.log(items.value)
+
+        for(let item of items.value) {
+            item.quantity = 0
+        }
+
+    } catch(e) {
+        console.log(e.message)
+    }
 }
 
 // Add selected items to cart
@@ -51,9 +73,11 @@ function doAddToCart(itemsToAdd) {
         if (!found) cartItems.value.push(item);
     }
 
+    console.log(cartItems.value)
+
     // TODO: store current cartitems into local storage
     // cartItems.value is a JS (complex) obj. We need to use JSON.stringify to convert the JS obj to JSON string
-   
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cartItems.value))
     
 }
 
@@ -64,7 +88,7 @@ function doAddToCart(itemsToAdd) {
   
     <!-- TODO: Category selection dropdown -->
     <label for="categories">Categories</label>
-    <select class="form-control" id="categories" v-model="selected_category" >
+    <select class="form-control" id="categories" v-model="selected_category" v-on:change="getItems" >
         <option v-for="c in categories"> {{c}} </option>
     </select>
     <br>
@@ -74,9 +98,12 @@ function doAddToCart(itemsToAdd) {
         <div class="row p-3">
             <div class='col-md-6 text-center'>
                 <!-- TODO: Show Items using ItemsBrowser-->
-                <button>
+                 <ItemsBrowser v-bind:items="items" v-on:addcart="doAddToCart">
                     Add to Cart
-                </button>
+                 </ItemsBrowser>
+
+
+
             </div>
         </div>
 
